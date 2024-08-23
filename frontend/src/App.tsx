@@ -14,7 +14,7 @@ const App: React.FC = () => {
   const [planets, setPlanets] = useState<Planet[]>([]);
   const [selectedPlanet, setSelectedPlanet] = useState<Planet | null>(null);
   const [loading, setLoading] = useState(true);
-  const [hoveredPlanets, setHoveredPlanets] = useState<Set<number>>(new Set());
+  const [hoveredPlanetIndex, setHoveredPlanetIndex] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -80,7 +80,7 @@ const App: React.FC = () => {
       requestAnimationFrame(animate);
 
       planetObjects.forEach((planet, index) => {
-        if (!hoveredPlanets.has(index)) {
+        if (index !== hoveredPlanetIndex) {
           const angle = Date.now() * 0.001 * (1 / (index + 1));
           const radius = 10 + index * 5;
           planet.position.x = Math.cos(angle) * radius;
@@ -129,15 +129,12 @@ const App: React.FC = () => {
 
       const intersects = raycaster.intersectObjects(planetObjects);
 
-      const newHoveredPlanets = new Set<number>();
-      intersects.forEach((intersect) => {
-        const index = planetObjects.indexOf(intersect.object as THREE.Mesh);
-        if (index !== -1) {
-          newHoveredPlanets.add(index);
-        }
-      });
-
-      setHoveredPlanets(newHoveredPlanets);
+      if (intersects.length > 0) {
+        const hoveredPlanet = planetObjects.indexOf(intersects[0].object as THREE.Mesh);
+        setHoveredPlanetIndex(hoveredPlanet);
+      } else {
+        setHoveredPlanetIndex(null);
+      }
     };
 
     window.addEventListener('click', handleClick);
@@ -148,7 +145,7 @@ const App: React.FC = () => {
       window.removeEventListener('click', handleClick);
       window.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [planets, loading, hoveredPlanets]);
+  }, [planets, loading, hoveredPlanetIndex]);
 
   return (
     <Box sx={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
