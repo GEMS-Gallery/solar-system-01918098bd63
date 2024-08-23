@@ -1,0 +1,12 @@
+type Planet = 
+ record {
+   gravity: opt float64;
+   id: nat;
+   name: text;
+   orbitalPeriod: opt float64;
+ };
+service : {
+  debugPrint: () -> ();
+  getPlanetInfo: (nat) -> (opt Planet) query;
+  getPlanets: () -> (vec Planet) query;
+}
