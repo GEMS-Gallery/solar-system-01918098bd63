@@ -14,6 +14,7 @@ const App: React.FC = () => {
   const [planets, setPlanets] = useState<Planet[]>([]);
   const [selectedPlanet, setSelectedPlanet] = useState<Planet | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hoveredPlanets, setHoveredPlanets] = useState<Set<number>>(new Set());
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -79,10 +80,12 @@ const App: React.FC = () => {
       requestAnimationFrame(animate);
 
       planetObjects.forEach((planet, index) => {
-        const angle = Date.now() * 0.001 * (1 / (index + 1));
-        const radius = 10 + index * 5;
-        planet.position.x = Math.cos(angle) * radius;
-        planet.position.z = Math.sin(angle) * radius;
+        if (!hoveredPlanets.has(index)) {
+          const angle = Date.now() * 0.001 * (1 / (index + 1));
+          const radius = 10 + index * 5;
+          planet.position.x = Math.cos(angle) * radius;
+          planet.position.z = Math.sin(angle) * radius;
+        }
       });
 
       renderer.render(scene, camera);
@@ -115,13 +118,37 @@ const App: React.FC = () => {
       }
     };
 
+    const handleMouseMove = (event: MouseEvent) => {
+      const mouse = new THREE.Vector2(
+        (event.clientX / window.innerWidth) * 2 - 1,
+        -(event.clientY / window.innerHeight) * 2 + 1
+      );
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObjects(planetObjects);
+
+      const newHoveredPlanets = new Set<number>();
+      intersects.forEach((intersect) => {
+        const index = planetObjects.indexOf(intersect.object as THREE.Mesh);
+        if (index !== -1) {
+          newHoveredPlanets.add(index);
+        }
+      });
+
+      setHoveredPlanets(newHoveredPlanets);
+    };
+
     window.addEventListener('click', handleClick);
+    window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('click', handleClick);
+      window.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [planets, loading]);
+  }, [planets, loading, hoveredPlanets]);
 
   return (
     <Box sx={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
